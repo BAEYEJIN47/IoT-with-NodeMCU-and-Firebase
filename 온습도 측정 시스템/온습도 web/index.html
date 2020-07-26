@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <link href="assets/css/bootstrap.css" rel="stylesheet" />
+    <link href="assets/css/custom-styles.css" rel="stylesheet" />
+</head>
+
+<body>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="page-header">
+            DIT Weather Monitor <small>Firebase + NodeMCU</small>
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="page-header">
+            <small>Current Data</small>
+        </h1>
+    </div>
+</div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 col-sm-12 col-xs-12">
+        <div class="panel panel-primary text-center no-boder bg-color-brown">
+            <div class="panel-body">
+                <i class="fa fa-users fa-5x"></i>
+                <h3 id="time"></h3>
+            </div>
+            <div class="panel-footer back-footer-brown">
+                201970584 배예진
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-xs-12">
+        <div class="panel panel-primary text-center no-boder bg-color-blue">
+            <div class="panel-body">
+                <i class="fa fa-bar-chart-o fa-5x"></i>
+                <h3 id="temp"> </h3>
+            </div>
+            <div class="panel-footer back-footer-blue">
+                Temperature
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-xs-12">
+        <div class="panel panel-primary text-center no-boder bg-color-red">
+            <div class="panel-body">
+                <i class="fa fa-bar-chart-o fa-5x"></i>
+                <h3 id="humi"> </h3>
+            </div>
+            <div class="panel-footer back-footer-red">
+                Humidity
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-xs-12">
+        <div class="panel panel-primary text-center no-boder bg-color-green">
+            <div class="panel-body">
+                <i class="fa fa fa-comments fa-5x"></i>
+                <h3 id="now"></h3>
+            </div>
+            <div class="panel-footer back-footer-green">
+                Network State
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="page-header">
+            <small>Time Seris Data</small>
+        </h1>
+    </div>
+</div>
+</div>
+
+<div id="chartContainer" style="height: 350px; width: 100%;">
+</div>
+<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-database.js"></script>
+
+<script type="text/javascript" src="canvasjs.min.js"></script>
+<script>
+ //연결할 Firebase의 정보
+  var firebaseConfig = {
+    apiKey: "AIzaSyBrMwHmdsL_t126CWoQYPzISCNWZ0eHt2o",
+    authDomain: "hello-firebase-0630.firebaseapp.com",
+    databaseURL: "https://hello-firebase-0630.firebaseio.com",
+    projectId: "hello-firebase-0630",
+    storageBucket: "hello-firebase-0630.appspot.com",
+    messagingSenderId: "912933488064",
+    appId: "1:912933488064:web:00647d3f93d67807f2b425",
+    measurementId: "G-KPWK1T3YP8"
+  };
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+
+        var myTimer;
+
+        //새로운 logDHT의 값을 가져온다
+        firebase.database().ref().child('logDHT/').on("child_added", function(snapshot) {
+	clearTimeout(myTimer);
+          console.log(snapshot.val());
+          //습도, 온도, 시간의 값을 스냅샷해 저장
+          var newHumi = snapshot.val().humidity;
+          var newTemp = snapshot.val().temperature;
+          var newTime = snapshot.val().time;
+          //그 값을 출력
+          humi.innerText = "Humidity : " + newHumi + "%";
+          temp.innerText = "Temperature : " + newTemp + "℃";
+          time.innerText = "Time : " + newTime;
+          //firebase에 정상적으로 데이터가 들어오는 상태
+	      now.innerText = "ON";
+
+    //네트워크 상태를 OFF하고, 60초 후에 function()함수 다시 실행
+	myTimer = setTimeout(function() {
+	 now.innerText = "OFF";
+        }, 60000);
+        })
+
+
+        //CnavasJS.Chart 객체 생성
+        var chart = new CanvasJS.Chart("chartContainer", {
+                animationEnabled: true,
+                theme: "light1",
+                title: {
+                text: "DIT Cloud based IoT Weather Monitor",
+                fontColor: '#03254E',
+            },
+            legend: {
+        		    fontSize: 15
+          	},
+          	//X축은 시간(시,분,초)
+            axisX: {
+                title: "Time",
+                titleFontSize: 14,
+                titleFontColor: '#03254E',
+                valueFormatString: 'HH:mm:ss',
+                labelFontColor: '#03254E',
+            },
+            //Y축은 온도와 습도(0~100 범위 지정)
+            axisY: {
+                valueFormatString: "0.0#",
+                minimum: 0,
+                maximum: 100,
+                title: "Temperature(°C) Humidity(%)",
+                titleFontColor: '#03254E',
+                titleFontSize: 14,
+                labelFontColor: '#03254E',
+            },
+            //x축의 시간, y축의 온도와 습도를 커서가 위치한 포인트의 데이터만 나타냄
+            toolTip: {
+                shared: true,
+                contentFormatter: function(e) {
+                    var content = CanvasJS.formatDate(e.entries[0].dataPoint.x, "HH:mm:ss") + "<br>";
+                    content += "<strong>Temperature</strong>: " + e.entries[0].dataPoint.y + " &deg;C<br>";
+                    content += "<strong>Humidity</strong>: " + e.entries[1].dataPoint.y + " %";
+                    return content;
+                }
+            },
+            animationEnabled: true,
+            //온도와 습도 데이터는 spline(곡선)형태로 나타나도록 함
+            data: [{
+                type: "spline",
+                legendText: "Temperature",
+                showInLegend: true,
+                markerColor: "#4682B4",
+                markerSize: 1,
+
+                dataPoints: []
+            }, {
+                type: "spline",
+                legendText: "Humidity",
+                showInLegend: true,
+                markerSize: 1,
+                dataPoints: []
+            }]
+
+        });
+
+        //logDHT의 데이터 값을 가져옴
+        var dbRef = firebase.database().ref('logDHT/');
+
+        //on() 메소드를 사용해 value 이벤트가 발생하면 데이터베이스의 스냅샷을 가져 온다
+        dbRef.on('child_added', function(snapshot) {
+            var row = snapshot.val();
+            row.time = new Date(row.time);
+            //dataPoints 배열에 새 dataPoint 추가
+            chart.options.data[0].dataPoints.push({
+                x: row.time,
+                y: row.temperature
+            });
+            chart.options.data[1].dataPoints.push({
+                x: row.time,
+                y: row.humidity
+            });
+            //값을 차트에 실행
+            chart.render();
+        });
+
+</script>
+</body>
+</html>
